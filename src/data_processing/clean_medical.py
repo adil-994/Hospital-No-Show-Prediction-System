@@ -1,7 +1,49 @@
 import pandas as pd
 import os
 
+def fix_column_typos(df):
+    """
+    Renames columns to fix typos found in the original Kaggle dataset.
+    This makes the code more professional and easier to read.
+    """
+    df = df.rename(columns={
+        'Hipertension': 'Hypertension',
+        'Handcap': 'Handicap',
+        'No-show': 'No_show',
+        'Showed_up': 'Showed_up' # Ensuring consistency
+    })
+    return df
+
+def remove_invalid_records(df):
+    """
+    Removes rows that contain logical errors, like negative age.
+    """
+    initial_count = len(df)
+    df = df[df['Age'] >= 0]
+    
+    removed = initial_count - len(df)
+    if removed > 0:
+        print(f"🧹 Removed {removed} records with negative Age.")
+    return df
+
+def drop_unnecessary_columns(df):
+    """
+    Removes columns that don't help the model learn general patterns.
+    """
+    # 1. We drop IDs because they are unique to individuals (Data Leakage)
+    # 2. We drop Date.diff because we will calculate our own 'waiting_days' later.
+    cols_to_remove = ['PatientId', 'AppointmentID', 'Date.diff']
+    
+    # We only drop them if they actually exist in the file
+    existing_cols = [c for c in cols_to_remove if c in df.columns]
+    df = df.drop(columns=existing_cols)
+    
+    return df
+
 def clean_medical_data():
+    """
+    The main function that orchestrates the medical data cleaning process.
+    """
     input_path = "data/raw/healthcare_noshows_appt.csv"
     output_path = "data/processed/cleaned_medical.csv"
 
@@ -9,47 +51,24 @@ def clean_medical_data():
         print(f"❌ Error: {input_path} not found.")
         return
 
-    # 1. Load the raw medical data
+    # Load
     df = pd.read_csv(input_path)
-    print(f"📊 Original Medical Shape: {df.shape}")
+    print(f"📊 Starting cleanup. Original rows: {len(df)}")
 
-    # 2. Fix Typos in Column Names (Standard for this dataset)
-    # Hipertension -> Hypertension
-    # Handcap -> Handicap
-    df = df.rename(columns={
-        'Hipertension': 'Hypertension',
-        'Handcap': 'Handicap',
-        'No-show': 'No_show'  # Standardizing for easier coding
-    })
-
-    # 3. Data Quality: Fix Age
-    # There is often a record with Age -1 (an error). We remove it.
-    df = df[df['Age'] >= 0]
+    # Process step-by-step
+    df = fix_column_typos(df)
+    df = remove_invalid_records(df)
+    df = drop_unnecessary_columns(df)
     
-    # 4. Data Quality: Convert Dates to Datetime objects
-    df['ScheduledDay'] = pd.to_datetime(df['ScheduledDay'])
-    df['AppointmentDay'] = pd.to_datetime(df['AppointmentDay'])
-
-    # 5. Drop Identifiers
-    # PatientId and AppointmentID are unique to individuals and don't help 
-    # predict patterns. We remove them to prevent "data leakage".
-    cols_to_drop = ['PatientId', 'AppointmentID']
-    df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
-
-    # 6. Check for duplicates
-    duplicates = df.duplicated().sum()
-    if duplicates > 0:
-        print(f"🧹 Removing {duplicates} duplicate rows...")
+    # Remove duplicates
+    if df.duplicated().sum() > 0:
         df = df.drop_duplicates()
+        print("🧹 Duplicate rows removed.")
 
-    # 7. Final Check
-    print(f"✅ Cleaned Medical Shape: {df.shape}")
-    print(f"📋 Columns: {df.columns.tolist()}")
-
-    # 8. Save the cleaned file
+    # Save
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_csv(output_path, index=False)
-    print(f"💾 Saved cleaned medical data to: {output_path}")
+    print(f"✅ Clean medical data saved to: {output_path}")
 
 if __name__ == "__main__":
     clean_medical_data()

@@ -1,27 +1,50 @@
 import pandas as pd
 import os
 
+def prepare_date_columns(df_med, df_weather):
+    """
+    Ensures both datasets have a 'Date' column in the same format
+    so we can link them together.
+    """
+    # Convert medical timestamps to just dates (YYYY-MM-DD)
+    df_med['AppointmentDay'] = pd.to_datetime(df_med['AppointmentDay']).dt.date
+    
+    # Ensure weather time is also just a date
+    df_weather['time'] = pd.to_datetime(df_weather['time']).dt.date
+    
+    return df_med, df_weather
+
+def verify_merge(df):
+    """
+    Checks the final dataset for any issues, like missing weather info.
+    """
+    missing_count = df['temperature_2m_mean'].isnull().sum()
+    if missing_count > 0:
+        print(f"⚠️ Warning: {missing_count} rows are missing weather data.")
+    else:
+        print("✅ Success: All medical records matched with weather data.")
+
 def merge_data():
-    # Define paths based on your structure
-    medical_path = "data/processed/cleaned_medical.csv"
+    """
+    Main function to join medical records with weather conditions.
+    """
+    med_path = "data/processed/cleaned_medical.csv"
     weather_path = "data/processed/cleaned_weather.csv"
     output_path = "data/processed/medical_weather_merged.csv"
 
-    # 1. Load datasets
-    print("🔄 Loading datasets...")
-    df_med = pd.read_csv(medical_path)
+    # 1. Load
+    if not os.path.exists(med_path) or not os.path.exists(weather_path):
+        print("❌ Error: Processed files missing. Clean data first!")
+        return
+
+    df_med = pd.read_csv(med_path)
     df_weather = pd.read_csv(weather_path)
 
-    # 2. Standardize Date Formats
-    # In medical data, AppointmentDay often has time (2016-04-29T18:38:08Z). We need only the date.
-    df_med['AppointmentDay'] = pd.to_datetime(df_med['AppointmentDay']).dt.date
-    
-    # In weather data, 'time' is usually already a date string
-    df_weather['time'] = pd.to_datetime(df_weather['time']).dt.date
+    # 2. Format
+    df_med, df_weather = prepare_date_columns(df_med, df_weather)
 
-    # 3. Perform Merge
-    # We join on medical date and weather time
-    print("🔗 Merging datasets on date...")
+    # 3. Join (Left Join keeps all medical records)
+    print("🔗 Linking medical records with weather data...")
     merged_df = pd.merge(
         df_med, 
         df_weather, 
@@ -31,22 +54,15 @@ def merge_data():
     )
 
     # 4. Cleanup
-    # Drop the duplicate 'time' column from weather after merge
+    # We drop the extra 'time' column from weather since we already have 'AppointmentDay'
     if 'time' in merged_df.columns:
-        merged_df.drop(columns=['time'], inplace=True)
+        merged_df = merged_df.drop(columns=['time'])
 
-    # 5. Check for missing values (if any appointment date didn't have weather data)
-    missing_weather = merged_df['temperature_2m_mean'].isnull().sum()
-    if missing_weather > 0:
-        print(f"⚠️ Warning: {missing_weather} rows have no weather data. Check date ranges!")
-    else:
-        print("✅ Merge successful! No missing weather values.")
-
-    # 6. Save final file
+    # 5. Verify & Save
+    verify_merge(merged_df)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     merged_df.to_csv(output_path, index=False)
-    print(f"💾 Saved merged dataset to: {output_path}")
-    print(f"📊 Final Shape: {merged_df.shape}")
+    print(f"💾 Final merged dataset saved. Shape: {merged_df.shape}")
 
 if __name__ == "__main__":
     merge_data()
