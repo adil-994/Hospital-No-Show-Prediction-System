@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/ca76e7d9fb874fb9af33c03c019d67c9/artifacts
+end_time: 1778531621124
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: ca76e7d9fb874fb9af33c03c019d67c9
+run_name: XGBoost_With_Weather
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778531609372
+status: 3
+tags: []
+user_id: BK TECH

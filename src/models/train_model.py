@@ -1,77 +1,117 @@
 import pandas as pd
 import os
+import warnings
+import logging
+
+# Suppress all warnings and MLflow noise for a clean terminal output
+warnings.filterwarnings("ignore")
+logging.getLogger("mlflow").setLevel(logging.ERROR)
+
 import mlflow
 import mlflow.sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.metrics import f1_score, accuracy_score
 
-def run_clean_training():
-    # 1. Setup Paths
-    # This line ensures MLflow saves in your current project folder/mlruns
+def setup_tracking():
+    """
+    Sets up the MLflow experiment location.
+    Using a local directory keeps all experimental history organized.
+    """
     base_dir = os.getcwd()
     mlflow.set_tracking_uri(f"file:///{os.path.join(base_dir, 'mlruns')}")
-    mlflow.set_experiment("Hospital_NoShow_Analysis")
+    mlflow.set_experiment("Hospital_NoShow_Refined_Analysis")
 
-    # 2. Load Data
-    data_path = "data/processed/final_featured_data.csv"
-    if not os.path.exists(data_path):
-        print("❌ Error: File not found. Run feature engineering first!")
-        return
-        
-    df = pd.read_csv(data_path)
-    df = pd.get_dummies(df) # Convert categories to numbers
+def load_and_prepare_data(path):
+    """
+    Loads the data and converts categorical text into numerical columns.
+    """
+    if not os.path.exists(path):
+        print(f"Error: Data file not found at {path}")
+        return None
+    df = pd.read_csv(path)
+    return pd.get_dummies(df)
 
-    # 3. Organize our Clues (Features)
-    medical_cols = [
-        'Age', 'Gender', 'Hypertension', 'Diabetes', 'Alcoholism', 
-        'Handicap', 'SMS_received', 'waiting_days', 'day_of_week', 'is_weekend'
-    ]
-    # Add the age groups created by get_dummies
-    medical_cols += [col for col in df.columns if 'age_group' in col]
+def get_feature_sets(df):
+    """
+    Defines the two experimental feature sets: Medical Only and Medical + Weather.
+    """
+    medical = ['Age', 'Gender', 'Hypertension', 'Diabetes', 'Alcoholism', 
+               'Handicap', 'SMS_received', 'waiting_days', 'day_of_week', 'is_weekend']
+    # Dynamically add age group columns created by pd.get_dummies
+    medical += [col for col in df.columns if 'age_group' in col]
     
-    weather_cols = [
-        'temperature_2m_mean', 'precipitation_sum', 
-        'relative_humidity_2m_mean', 'windspeed_10m_max', 'is_rainy'
-    ]
+    weather = ['temperature_2m_mean', 'precipitation_sum', 
+               'relative_humidity_2m_mean', 'windspeed_10m_max', 'is_rainy']
+    
+    return medical, weather
 
-    target = 'target'
-
-    # --- EXPERIMENT A: Medical Only ---
-    print("\n🧪 Training Experiment A (Medical Only)...")
-    with mlflow.start_run(run_name="Medical_Only"):
-        X = df[medical_cols]
-        y = df[target]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-        model = RandomForestClassifier(n_estimators=100, max_depth=10, class_weight='balanced', random_state=42)
+def train_and_log(model, X_train, X_test, y_train, y_test, run_name):
+    """
+    Trains the model and logs performance metrics to MLflow.
+    """
+    with mlflow.start_run(run_name=run_name):
         model.fit(X_train, y_train)
-        
         preds = model.predict(X_test)
+        
         f1 = f1_score(y_test, preds)
+        acc = accuracy_score(y_test, preds)
         
-        mlflow.log_param("features", "medical_only")
         mlflow.log_metric("f1_score", f1)
+        mlflow.log_metric("accuracy", acc)
         mlflow.sklearn.log_model(model, "model")
-        print(f"✅ Finished A. F1 Score: {f1:.4f}")
-
-    # --- EXPERIMENT B: Medical + Weather ---
-    print("🧪 Training Experiment B (Medical + Weather)...")
-    with mlflow.start_run(run_name="With_Weather"):
-        X = df[medical_cols + weather_cols]
-        y = df[target]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-        model = RandomForestClassifier(n_estimators=100, max_depth=10, class_weight='balanced', random_state=42)
-        model.fit(X_train, y_train)
         
-        preds = model.predict(X_test)
-        f1 = f1_score(y_test, preds)
+        return f1, acc
+
+def execute_pipeline():
+    setup_tracking()
+    print("Pipeline: Starting Model Evaluation...")
+    
+    df = load_and_prepare_data("data/processed/final_featured_data.csv")
+    if df is None:
+        return
+
+    med_features, weather_features = get_feature_sets(df)
+    target = 'no_show_target'
+    y = df[target]
+    
+    # We define our models here. 
+    # All models use 'balanced' weights to handle the class imbalance.
+    models = {
+        "Random Forest": RandomForestClassifier(n_estimators=100, max_depth=10, class_weight='balanced', random_state=42),
+        "Logistic Regression": LogisticRegression(max_iter=2000, class_weight='balanced', random_state=42),
+        "SVM": LinearSVC(class_weight='balanced', C=1.0, random_state=42)
+    }
+
+    best_f1 = 0
+    best_model_name = ""
+
+    for name, model in models.items():
+        print(f"\nProcessing Algorithm: {name}")
         
-        mlflow.log_param("features", "medical_plus_weather")
-        mlflow.log_metric("f1_score", f1)
-        mlflow.sklearn.log_model(model, "model")
-        print(f"✅ Finished B. F1 Score: {f1:.4f}")
+        # Experiment A: Medical Only
+        X_med = df[med_features]
+        X_tr_a, X_te_a, y_tr_a, y_te_a = train_test_split(X_med, y, test_size=0.2, random_state=42)
+        f1_a, acc_a = train_and_log(model, X_tr_a, X_te_a, y_tr_a, y_te_a, f"{name}_Medical_Only")
+        print(f" - Medical Only   | F1: {f1_a:.4f} | Acc: {acc_a:.4f}")
+
+        # Experiment B: Medical + Weather
+        X_all = df[med_features + weather_features]
+        X_tr_b, X_te_b, y_tr_b, y_te_b = train_test_split(X_all, y, test_size=0.2, random_state=42)
+        f1_b, acc_b = train_and_log(model, X_tr_b, X_te_b, y_tr_b, y_te_b, f"{name}_With_Weather")
+        print(f" - With Weather   | F1: {f1_b:.4f} | Acc: {acc_b:.4f}")
+
+        # Final winner selection based on the Weather-enhanced experiment
+        if f1_b > best_f1:
+            best_f1 = f1_b
+            best_model_name = name
+
+    print("-" * 50)
+    print(f"Final Selection: {best_model_name} is the best performing model.")
+    print(f"Reasoning: Highest F1-score achieved ({best_f1:.4f}).")
+    print("-" * 50)
 
 if __name__ == "__main__":
-    run_clean_training()
+    execute_pipeline()

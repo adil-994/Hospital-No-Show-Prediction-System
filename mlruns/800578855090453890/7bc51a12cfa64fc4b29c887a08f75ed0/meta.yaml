@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/7bc51a12cfa64fc4b29c887a08f75ed0/artifacts
+end_time: 1778526741543
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 7bc51a12cfa64fc4b29c887a08f75ed0
+run_name: XGBoost_Medical_Only
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778526735403
+status: 3
+tags: []
+user_id: BK TECH

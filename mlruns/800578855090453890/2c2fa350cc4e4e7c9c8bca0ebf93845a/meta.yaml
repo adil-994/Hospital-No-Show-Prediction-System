@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/2c2fa350cc4e4e7c9c8bca0ebf93845a/artifacts
+end_time: 1778531543572
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 2c2fa350cc4e4e7c9c8bca0ebf93845a
+run_name: Random Forest_Medical_Only
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778531526232
+status: 3
+tags: []
+user_id: BK TECH

@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/e45e9f000a234b17b2f7789df57fbb8c/artifacts
+end_time: 1778532884778
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: e45e9f000a234b17b2f7789df57fbb8c
+run_name: Logistic Regression_With_Weather
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778532859096
+status: 3
+tags: []
+user_id: BK TECH

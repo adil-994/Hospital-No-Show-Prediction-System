@@ -1,0 +1,10 @@
+artifact_location: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/models/m-e5aee2725e3e40649559354aa16d3cb6/artifacts
+creation_timestamp: 1778532886126
+experiment_id: '800578855090453890'
+last_updated_timestamp: 1778532899036
+model_id: m-e5aee2725e3e40649559354aa16d3cb6
+model_type: null
+name: model
+source_run_id: 504a7fcdebd64ea4b32f2ead1c3a9758
+status: 2
+status_message: null
