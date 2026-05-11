@@ -3,8 +3,8 @@ import os
 
 def merge_data():
     # Define paths based on your structure
-    medical_path = "data/raw/healthcare_noshows_appt.csv"
-    weather_path = "data/raw/vitoria_weather_apr_jun_2016.csv"
+    medical_path = "data/processed/cleaned_medical.csv"
+    weather_path = "data/processed/cleaned_weather.csv"
     output_path = "data/processed/medical_weather_merged.csv"
 
     # 1. Load datasets
