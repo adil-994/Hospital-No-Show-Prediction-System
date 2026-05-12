@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import joblib  # Added for serialization
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
@@ -38,21 +39,21 @@ def run_hyperparameter_search(X_train, y_train):
         'n_estimators': [100, 200, 300],
         'max_depth': [10, 20, 30, None],
         'min_samples_split': [2, 5, 10],
-        'class_weight': ['balanced'] # Keeping our imbalance fix
+        'class_weight': ['balanced'] 
     }
 
     rf = RandomForestClassifier(random_state=42)
 
-    # RandomizedSearchCV tries a random subset of combinations (faster than GridSearchCV)
+    # RandomizedSearchCV tries a random subset of combinations
     search = RandomizedSearchCV(
         estimator=rf,
         param_distributions=param_grid,
-        n_iter=5, # We try 5 different combinations
+        n_iter=5, 
         scoring='f1',
-        cv=3, # 3-fold cross-validation
+        cv=3, 
         verbose=1,
         random_state=42,
-        n_jobs=-1 # Use all computer processors
+        n_jobs=-1 
     )
 
     print("Process: Searching for the best model parameters. This may take a moment.")
@@ -73,16 +74,37 @@ def log_best_model(model, params, X_test, y_test):
         
         print(f"Success: Tuning complete. Optimized F1-Score: {f1:.4f}")
 
+def save_final_artifacts(model, feature_list):
+    """
+    Saves the final model and feature names to the artifacts folder.
+    This is required for the Flask application to function correctly.
+    """
+    model_dir = "artifacts/models"
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+        
+    # Save the model object
+    joblib.dump(model, os.path.join(model_dir, "best_model.joblib"))
+    
+    # Save the feature names to ensure the Flask app uses the same column order
+    joblib.dump(feature_list, os.path.join(model_dir, "model_features.joblib"))
+    
+    print(f"Process: Final model and features saved to {model_dir}")
+
 def execute_tuning_pipeline():
     setup_tuning_tracking()
     
     X_train, X_test, y_train, y_test = get_tuning_data("data/processed/final_featured_data.csv")
     
-    # Find the best version of the model
+    # 1. Find the best version of the model
     best_rf_model, best_settings = run_hyperparameter_search(X_train, y_train)
     
-    # Save the results
+    # 2. Log results to MLflow
     log_best_model(best_rf_model, best_settings, X_test, y_test)
+    
+    # 3. Serialize (Save) for Deployment
+    # We pass X_train.columns to save the exact feature order
+    save_final_artifacts(best_rf_model, X_train.columns.tolist())
     
     print("-" * 50)
     print("Final Best Settings Found:")
@@ -92,3 +114,4 @@ def execute_tuning_pipeline():
 
 if __name__ == "__main__":
     execute_tuning_pipeline()
+    

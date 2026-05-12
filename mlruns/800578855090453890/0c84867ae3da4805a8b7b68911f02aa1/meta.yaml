@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/0c84867ae3da4805a8b7b68911f02aa1/artifacts
+end_time: 1778594056007
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 0c84867ae3da4805a8b7b68911f02aa1
+run_name: SVM_Medical_Only
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778594047728
+status: 3
+tags: []
+user_id: BK TECH

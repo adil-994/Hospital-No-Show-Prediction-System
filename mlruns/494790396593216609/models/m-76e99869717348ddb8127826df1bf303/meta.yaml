@@ -1,0 +1,10 @@
+artifact_location: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/494790396593216609/models/m-76e99869717348ddb8127826df1bf303/artifacts
+creation_timestamp: 1778596781496
+experiment_id: '494790396593216609'
+last_updated_timestamp: 1778596790228
+model_id: m-76e99869717348ddb8127826df1bf303
+model_type: null
+name: final_tuned_model
+source_run_id: f870a96fe450409ebe53b66cdf5257e9
+status: 2
+status_message: null

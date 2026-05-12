@@ -1,151 +1,220 @@
 import pandas as pd
 import os
-import joblib
 import warnings
 import logging
 
-# Suppress warnings and background logs for a clean report
+# Suppress all warnings and MLflow noise for a clean terminal output
 warnings.filterwarnings("ignore")
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 import mlflow
 import mlflow.sklearn
+
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import f1_score, accuracy_score
 
-# --- 1. SETUP AND UTILITIES ---
 
 def setup_tracking():
+    """
+    Sets up the MLflow experiment location.
+    Using a local directory keeps all experimental history organized.
+    """
     base_dir = os.getcwd()
-    mlflow.set_tracking_uri(f"file:///{os.path.join(base_dir, 'mlruns')}")
-    mlflow.set_experiment("Hospital_NoShow_Final_Serialization")
+
+    mlflow.set_tracking_uri(
+        f"file:///{os.path.join(base_dir, 'mlruns')}"
+    )
+
+    mlflow.set_experiment("Hospital_NoShow_Refined_Analysis")
+
 
 def load_and_prepare_data(path):
+    """
+    Loads the data and converts categorical text into numerical columns.
+    """
+    if not os.path.exists(path):
+        print(f"Error: Data file not found at {path}")
+        return None
+
     df = pd.read_csv(path)
+
     return pd.get_dummies(df)
 
-def calculate_metrics_dict(model, X, y):
-    """Calculates all metrics for the structured report."""
-    preds = model.predict(X)
-    # Some models don't support predict_proba (like LinearSVC)
-    if hasattr(model, "predict_proba"):
-        probs = model.predict_proba(X)[:, 1]
-        roc = roc_auc_score(y, probs)
-    else:
-        roc = 0.0  # Placeholder for models without probability
 
-    return {
-        "accuracy": accuracy_score(y, preds),
-        "precision": precision_score(y, preds),
-        "recall": recall_score(y, preds),
-        "f1": f1_score(y, preds),
-        "roc_auc": roc,
-        "cm": confusion_matrix(y, preds)
-    }
-
-# --- 2. THE STRUCTURED REPORT ---
-
-def print_structured_report(model_name, m_train, m_val, m_test):
+def get_feature_sets(df):
     """
-    Prints a professional, structured report matching the requested format.
+    Defines the two experimental feature sets:
+    Medical Only and Medical + Weather.
     """
-    print("\n" + "="*75)
-    print("FINAL MODEL PERFORMANCE REPORT")
-    print("="*75)
-    print(f"Selected Model:     {model_name}")
-    print(f"Selected Threshold: 0.50")
-    print("This model was selected with F1-score as the primary objective to balance")
-    print("prediction accuracy with the ability to catch minority class no-shows.")
-    print("-" * 75)
-    
-    # Header
-    print(f"{'Metric':<15} {'Train':<15} {'Val':<15} {'Test':<15}")
-    print("-" * 75)
-    
-    # Table Rows
-    for key in ["accuracy", "precision", "recall", "f1", "roc_auc"]:
-        print(f"{key:<15} {m_train[key]:<15.4f} {m_val[key]:<15.4f} {m_test[key]:<15.4f}")
-    
-    print("-" * 75)
-    
-    # Confusion Matrix Stats (from Test Set)
-    tn, fp, fn, tp = m_test['cm'].ravel()
-    print(f"Test Confusion Matrix: {m_test['cm'].tolist()}")
-    print(f"Test False Positives: {fp}")
-    print(f"Test False Negatives: {fn}")
-    print(f"Test True Positives:  {tp}")
-    print(f"Test True Negatives:  {tn}")
-    
-    # Generalization Gaps
-    train_val_gap = abs(m_train['f1'] - m_val['f1'])
-    print(f"Train-Val F1 Gap:    {train_val_gap:+.4f}")
-    
-    print("="*75)
-    status = "Excellent" if train_val_gap < 0.05 else "Good" if train_val_gap < 0.1 else "Overfitting"
-    print(f"GENERALISATION: {status} - train-val gaps within target (<0.08)")
-    print("="*75 + "\n")
 
-# --- 3. SERIALIZATION ---
+    medical = [
+        'Age',
+        'Gender',
+        'Hypertension',
+        'Diabetes',
+        'Alcoholism',
+        'Handicap',
+        'SMS_received',
+        'waiting_days',
+        'day_of_week',
+        'is_weekend'
+    ]
 
-def save_artifacts(model, features):
-    """Saves model and features list for deployment."""
-    os.makedirs("artifacts/models", exist_ok=True)
-    joblib.dump(model, "artifacts/models/best_model.joblib")
-    joblib.dump(features, "artifacts/models/model_features.joblib")
-    print("Process: Model and feature list serialized to artifacts/models/")
+    # Dynamically add age group columns created by pd.get_dummies
+    medical += [col for col in df.columns if 'age_group' in col]
 
-# --- 4. MAIN PIPELINE ---
+    weather = [
+        'temperature_2m_mean',
+        'precipitation_sum',
+        'relative_humidity_2m_mean',
+        'windspeed_10m_max',
+        'is_rainy'
+    ]
+
+    return medical, weather
+
+
+def train_and_log(model, X_train, X_test, y_train, y_test, run_name):
+    """
+    Trains the model and logs performance metrics to MLflow.
+    """
+
+    with mlflow.start_run(run_name=run_name):
+
+        model.fit(X_train, y_train)
+
+        preds = model.predict(X_test)
+
+        f1 = f1_score(y_test, preds)
+        acc = accuracy_score(y_test, preds)
+
+        mlflow.log_metric("f1_score", f1)
+        mlflow.log_metric("accuracy", acc)
+
+        mlflow.sklearn.log_model(model, "model")
+
+        return f1, acc
+
 
 def execute_pipeline():
+
     setup_tracking()
-    print("Process: Initializing evaluation and serialization pipeline.")
-    
-    df = load_and_prepare_data("data/processed/final_featured_data.csv")
+
+    print("Pipeline: Starting Model Evaluation...")
+
+    df = load_and_prepare_data(
+        "data/processed/final_featured_data.csv"
+    )
+
+    if df is None:
+        return
+
+    med_features, weather_features = get_feature_sets(df)
+
     target = 'no_show_target'
-    X = df.drop(columns=[target])
+
     y = df[target]
 
-    # Model Definitions
+    # All models use balanced weights
+    # to handle class imbalance
     models = {
-        "Random Forest": RandomForestClassifier(n_estimators=100, max_depth=10, class_weight='balanced', random_state=42),
-        "Logistic Regression": LogisticRegression(max_iter=2000, class_weight='balanced', random_state=42),
-        "SVM": LinearSVC(class_weight='balanced', random_state=42)
+        "Random Forest": RandomForestClassifier(
+            n_estimators=100,
+            max_depth=10,
+            class_weight='balanced',
+            random_state=42
+        ),
+
+        "Logistic Regression": LogisticRegression(
+            max_iter=2000,
+            class_weight='balanced',
+            random_state=42
+        ),
+
+        "SVM": LinearSVC(
+            class_weight='balanced',
+            C=1.0,
+            random_state=42
+        )
     }
 
     best_f1 = 0
-    winner_name = ""
-    winner_model = None
+    best_model_name = ""
 
-    # Step 1: Compare to find winner (using standard 80/20 split)
     for name, model in models.items():
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        with mlflow.start_run(run_name=f"Comparison_{name}"):
-            model.fit(X_train, y_train)
-            f1 = f1_score(y_test, model.predict(X_test))
-            if f1 > best_f1:
-                best_f1 = f1
-                winner_name = name
-                winner_model = model
 
-    # Step 2: Final 3-Way Split for the Winner (70% Train, 15% Val, 15% Test)
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+        print(f"\nProcessing Algorithm: {name}")
 
-    winner_model.fit(X_train, y_train)
-    
-    # Step 3: Detailed Metrics Calculation
-    m_train = calculate_metrics_dict(winner_model, X_train, y_train)
-    m_val = calculate_metrics_dict(winner_model, X_val, y_val)
-    m_test = calculate_metrics_dict(winner_model, X_test, y_test)
+        # Experiment A: Medical Only
+        X_med = df[med_features]
 
-    # Step 4: Professional Output
-    print_structured_report(winner_name, m_train, m_val, m_test)
+        X_tr_a, X_te_a, y_tr_a, y_te_a = train_test_split(
+            X_med,
+            y,
+            test_size=0.2,
+            random_state=42
+        )
 
-    # Step 5: Serialization
-    save_artifacts(winner_model, X_train.columns.tolist())
+        f1_a, acc_a = train_and_log(
+            model,
+            X_tr_a,
+            X_te_a,
+            y_tr_a,
+            y_te_a,
+            f"{name}_Medical_Only"
+        )
+
+        print(
+            f" - Medical Only   | "
+            f"F1: {f1_a:.4f} | Acc: {acc_a:.4f}"
+        )
+
+        # Experiment B: Medical + Weather
+        X_all = df[med_features + weather_features]
+
+        X_tr_b, X_te_b, y_tr_b, y_te_b = train_test_split(
+            X_all,
+            y,
+            test_size=0.2,
+            random_state=42
+        )
+
+        f1_b, acc_b = train_and_log(
+            model,
+            X_tr_b,
+            X_te_b,
+            y_tr_b,
+            y_te_b,
+            f"{name}_With_Weather"
+        )
+
+        print(
+            f" - With Weather   | "
+            f"F1: {f1_b:.4f} | Acc: {acc_b:.4f}"
+        )
+
+        # Final winner selection
+        if f1_b > best_f1:
+            best_f1 = f1_b
+            best_model_name = name
+
+    print("-" * 50)
+
+    print(
+        f"Final Selection: "
+        f"{best_model_name} is the best performing model."
+    )
+
+    print(
+        f"Reasoning: Highest F1-score achieved "
+        f"({best_f1:.4f})."
+    )
+
+    print("-" * 50)
+
 
 if __name__ == "__main__":
     execute_pipeline()

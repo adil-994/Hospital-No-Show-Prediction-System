@@ -1,0 +1,19 @@
+# Ignore the large raw and processed datasets
+data/
+
+# Ignore MLflow logs and experiment history
+mlruns/
+
+# Ignore local Python environments and caches
+venv/
+.venv/
+__pycache__/
+
+# Ignore notebooks and git history
+notebooks/
+.git/
+.gitignore
+
+# Ignore various system files
+.DS_Store
+*.pyc
