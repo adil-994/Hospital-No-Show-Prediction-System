@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/33c1c204f6b74587839f4c8cbec3d6ae/artifacts
+end_time: 1778618124080
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 33c1c204f6b74587839f4c8cbec3d6ae
+run_name: Logistic Regression_Medical_Only
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778618100661
+status: 3
+tags: []
+user_id: BK TECH

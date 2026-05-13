@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/494790396593216609/81c884852fdf4b9881c672cf4fcc9e1e/artifacts
+end_time: 1778701289290
+entry_point_name: ''
+experiment_id: '494790396593216609'
+lifecycle_stage: active
+run_id: 81c884852fdf4b9881c672cf4fcc9e1e
+run_name: Optimized_Random_Forest
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778701276132
+status: 3
+tags: []
+user_id: BK TECH

@@ -45,6 +45,7 @@ def simplify_weather(df):
     if 'precipitation_sum' in df.columns:
         # 1 if there was any rain, 0 if it was dry
         df['is_rainy'] = (df['precipitation_sum'] > 0).astype(int)
+
     return df
 
 def encode_categorical_data(df):
@@ -59,7 +60,9 @@ def encode_categorical_data(df):
     # 2. Map Target: We want to predict NO-SHOWS.
     # Therefore: False (didn't show) becomes 1, True (showed up) becomes 0.
     if 'Showed_up' in df.columns:
-        df['no_show_target'] = df['Showed_up'].apply(lambda x: 1 if x == False or str(x).lower() == 'false' else 0)
+        df['no_show_target'] = df['Showed_up'].apply(
+            lambda x: 1 if x == False or str(x).lower() == 'false' else 0
+        )
     
     return df
 
@@ -71,12 +74,12 @@ def engineer_features():
     output_path = "data/processed/final_featured_data.csv"
 
     if not os.path.exists(input_path):
-        print(f"❌ Error: {input_path} not found.")
+        print(f"Input file not found: {input_path}")
         return
 
     # Load
     df = pd.read_csv(input_path)
-    print(f"🧠 Starting Feature Engineering on {len(df)} rows...")
+    print(f"Starting feature engineering on {len(df)} records.")
 
     # Execute Modules
     df = create_time_features(df)
@@ -87,12 +90,18 @@ def engineer_features():
     # Final Cleanup: Remove raw columns that the model can't use
     # We keep 'AppointmentDay' for now (plots) but remove 'ScheduledDay' and 'Showed_up'
     cols_to_drop = ['ScheduledDay', 'Showed_up', 'No_show']
-    df = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors='ignore')
+
+    df = df.drop(
+        columns=[c for c in cols_to_drop if c in df.columns],
+        errors='ignore'
+    )
 
     # Save
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_csv(output_path, index=False)
-    print(f"✅ Feature Engineering complete. Saved to: {output_path}")
+
+    print(f"Feature engineering completed successfully.")
+    print(f"Processed dataset saved to: {output_path}")
 
 if __name__ == "__main__":
     engineer_features()

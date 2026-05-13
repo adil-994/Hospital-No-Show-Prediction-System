@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/365184060663786030/13d8d5da45dd4985b4d0912811d50abe/artifacts
+end_time: 1778648277300
+entry_point_name: ''
+experiment_id: '365184060663786030'
+lifecycle_stage: active
+run_id: 13d8d5da45dd4985b4d0912811d50abe
+run_name: Random Forest_Selection_Run
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778648258838
+status: 3
+tags: []
+user_id: BK TECH

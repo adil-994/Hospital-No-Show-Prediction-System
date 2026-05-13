@@ -36,7 +36,7 @@ def run_hyperparameter_search(X_train, y_train):
     """
     # Define the 'Grid' of settings to try
     param_grid = {
-        'n_estimators': [100, 200, 300],
+        'n_estimators': [100, 200, 300], # 3x4x3 = 36 -> 5
         'max_depth': [10, 20, 30, None],
         'min_samples_split': [2, 5, 10],
         'class_weight': ['balanced'] 
@@ -114,4 +114,3 @@ def execute_tuning_pipeline():
 
 if __name__ == "__main__":
     execute_tuning_pipeline()
-    

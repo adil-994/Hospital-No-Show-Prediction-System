@@ -19,10 +19,11 @@ def verify_merge(df):
     Checks the final dataset for any issues, like missing weather info.
     """
     missing_count = df['temperature_2m_mean'].isnull().sum()
+
     if missing_count > 0:
-        print(f"⚠️ Warning: {missing_count} rows are missing weather data.")
+        print(f"Warning: {missing_count} records are missing weather data.")
     else:
-        print("✅ Success: All medical records matched with weather data.")
+        print("All medical records successfully matched with weather data.")
 
 def merge_data():
     """
@@ -34,7 +35,7 @@ def merge_data():
 
     # 1. Load
     if not os.path.exists(med_path) or not os.path.exists(weather_path):
-        print("❌ Error: Processed files missing. Clean data first!")
+        print("Required processed files were not found.")
         return
 
     df_med = pd.read_csv(med_path)
@@ -44,12 +45,13 @@ def merge_data():
     df_med, df_weather = prepare_date_columns(df_med, df_weather)
 
     # 3. Join (Left Join keeps all medical records)
-    print("🔗 Linking medical records with weather data...")
+    print("Merging medical and weather datasets...")
+
     merged_df = pd.merge(
-        df_med, 
-        df_weather, 
-        left_on='AppointmentDay', 
-        right_on='time', 
+        df_med,
+        df_weather,
+        left_on='AppointmentDay',
+        right_on='time',
         how='left'
     )
 
@@ -60,9 +62,11 @@ def merge_data():
 
     # 5. Verify & Save
     verify_merge(merged_df)
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     merged_df.to_csv(output_path, index=False)
-    print(f"💾 Final merged dataset saved. Shape: {merged_df.shape}")
+
+    print(f"Merged dataset saved successfully. Final shape: {merged_df.shape}")
 
 if __name__ == "__main__":
     merge_data()

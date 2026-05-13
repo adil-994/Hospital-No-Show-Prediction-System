@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/365184060663786030/664dbd79c42c40709b2e73afe0004a1a/artifacts
+end_time: 1778648305040
+entry_point_name: ''
+experiment_id: '365184060663786030'
+lifecycle_stage: active
+run_id: 664dbd79c42c40709b2e73afe0004a1a
+run_name: SVM_Selection_Run
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778648294782
+status: 3
+tags: []
+user_id: BK TECH

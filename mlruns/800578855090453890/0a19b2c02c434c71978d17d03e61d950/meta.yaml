@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/0a19b2c02c434c71978d17d03e61d950/artifacts
+end_time: 1778615244569
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 0a19b2c02c434c71978d17d03e61d950
+run_name: Random Forest_With_Weather
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778615214840
+status: 3
+tags: []
+user_id: BK TECH
