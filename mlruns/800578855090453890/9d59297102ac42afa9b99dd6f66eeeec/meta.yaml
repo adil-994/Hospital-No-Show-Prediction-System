@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\University\6th Semester\ML Lab\Lab_Project\mlruns/800578855090453890/9d59297102ac42afa9b99dd6f66eeeec/artifacts
+end_time: 1778732935577
+entry_point_name: ''
+experiment_id: '800578855090453890'
+lifecycle_stage: active
+run_id: 9d59297102ac42afa9b99dd6f66eeeec
+run_name: SVM_With_Weather
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778732918052
+status: 3
+tags: []
+user_id: BK TECH
